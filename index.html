@@ -317,7 +317,8 @@ async function addTask(grupo, grupo_titulo, secao, label){
   toast("Tarefa adicionada");
 }
 async function removeTask(id){
-  const { error } = await sb.from("painel_tarefa").delete().eq("id", id);
+  // soft delete: marca sys_deletado=true (não apaga fisicamente)
+  const { error } = await sb.from("painel_tarefa").update({ sys_deletado:true }).eq("id", id);
   if(error){ toast("Erro ao excluir: "+error.message, true); return; }
   toast("Tarefa excluída");
 }
@@ -378,7 +379,7 @@ function initControls(){
 
 // ===== dados + realtime =====
 async function loadRows(){
-  const { data, error } = await sb.from("painel_tarefa").select("*").order("ordem");
+  const { data, error } = await sb.from("painel_tarefa").select("*").eq("sys_deletado", false).order("ordem");
   if(error){ toast("Erro ao carregar: "+error.message, true); return; }
   ROWS = data || [];
   render();
