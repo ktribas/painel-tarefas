@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EsgTrek — Painel de Tarefas</title>
+<style>
+  :root{
+    color-scheme: light;
+    --bg:#F4F6F3; --card:#ffffff; --ink:#1f2a22; --muted:#6b756d; --line:#e6ebe6;
+    --green:#273d29; --done:#273d29; --doing:#f18516; --amber:#e5a76d; --idle:#999999; --urgent:#941C14;
+    --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  body.compact{font-size:13.5px}
+  .wrap{max-width:1060px;margin:0 auto;padding:24px 18px 80px}
+  header h1{margin:0 0 4px;font-size:23px;color:var(--green)}
+  header .sub{color:var(--muted);font-size:13px}
+  .topbar{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .topbar .sp{flex:1}
+  .who{font-size:12.5px;color:var(--muted)}
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:18px 0 14px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow)}
+  .kpi .n{font-size:23px;font-weight:700;color:var(--green)}
+  .kpi .n.warn{color:var(--urgent)}
+  .kpi .l{font-size:11.5px;color:var(--muted)}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0 4px}
+  .btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer;box-shadow:var(--shadow)}
+  .btn:hover{border-color:#c9d3c9}
+  .btn.active{background:var(--green);color:#fff;border-color:var(--green)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;box-shadow:var(--shadow)}
+  .seg button{border:0;background:var(--card);color:var(--ink);padding:7px 11px;font-size:13px;cursor:pointer}
+  .seg button.active{background:var(--green);color:#fff}
+  .search{flex:1;min-width:160px;border:1px solid var(--line);border-radius:8px;padding:7px 11px;font-size:13px;box-shadow:var(--shadow)}
+  h2.sec{font-size:16px;margin:26px 0 10px;color:var(--green)}
+  .secnote{font-size:12px;color:var(--muted);margin:2px 0 12px}
+  .group{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}
+  .ghead{display:grid;grid-template-columns:24px 1fr 150px 88px;gap:12px;align-items:center;padding:12px 15px;cursor:pointer;user-select:none}
+  .ghead:hover{background:#fafcfa}
+  .caret{transition:transform .15s;color:var(--muted);font-size:13px}
+  .group.open .caret{transform:rotate(90deg)}
+  .gtitle{font-weight:600}
+  .bar{height:8px;border-radius:99px;background:#edf1ed;overflow:hidden}
+  .bar > i{display:block;height:100%;border-radius:99px;transition:width .2s}
+  .gcount{font-size:12px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+  .gbody{display:none;border-top:1px solid var(--line);padding:4px 15px 10px}
+  .group.open .gbody{display:block}
+  .task{display:flex;gap:10px;align-items:flex-start;padding:8px 4px;border-top:1px dashed var(--line)}
+  body.compact .task{padding:5px 4px}
+  .task:first-child{border-top:none}
+  .task input[type=checkbox]{width:16px;height:16px;accent-color:var(--done);cursor:pointer;flex:0 0 auto;margin-top:2px}
+  .task .tl{font-size:13.5px;flex:1}
+  .task.done .tl > .lab{color:var(--muted);text-decoration:line-through}
+  .task .tnote{display:block;font-size:11.5px;color:var(--muted);text-decoration:none;margin-top:1px}
+  .task .obs{display:block;width:100%;margin-top:3px;border:1px solid var(--line);border-radius:6px;padding:3px 6px;font-size:11.5px;color:#444;background:#fff;resize:vertical;min-height:0;height:24px;font-family:inherit}
+  .task .obs.empty{color:var(--muted)}
+  .resp,.prisel{flex:0 0 auto;font-size:11.5px;border:1px solid var(--line);border-radius:6px;padding:3px 5px;background:#fff;color:#444;cursor:pointer}
+  .resp{max-width:130px}
+  .resp.unset{color:var(--muted)}
+  .pri{font-size:10px;font-weight:700;border-radius:5px;padding:1px 6px;border:1px solid var(--line);color:var(--muted);margin-left:6px;white-space:nowrap}
+  .pri.P0{color:#fff;border-color:var(--urgent);background:var(--urgent)}
+  .pri.P1{color:#6b3f10;border-color:var(--amber);background:#f6e2cd}
+  .pri.P2{color:#fff;border-color:var(--idle);background:var(--idle)}
+  .star{color:var(--urgent);font-weight:700;margin-right:3px}
+  .del{flex:0 0 auto;border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:2px 4px;border-radius:6px}
+  .del:hover{color:var(--urgent);background:#fdeceb}
+  .empty{font-size:12px;color:var(--muted);padding:8px 4px}
+  .addrow{display:flex;gap:8px;padding:8px 4px 4px;border-top:1px dashed var(--line)}
+  .addrow input{flex:1;border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:13px}
+  .urgent-box{background:#fdeceb;border:1px solid #f0c9c4;border-radius:12px;padding:12px 16px;margin-bottom:12px}
+  .urgent-box h3{margin:0 0 6px;color:var(--urgent);font-size:14px}
+  .urgent-box ul{margin:0;padding-left:18px}
+  .urgent-box li{font-size:13px;margin:4px 0}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--green);color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;box-shadow:var(--shadow);opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
+  .toast.show{opacity:1}
+  .toast.err{background:var(--urgent)}
+  /* login */
+  #login{max-width:360px;margin:9vh auto 0;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:26px 24px}
+  #login h1{margin:0 0 4px;font-size:20px;color:var(--green)}
+  #login p{margin:0 0 18px;color:var(--muted);font-size:13px}
+  #login label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+  #login input{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:14px}
+  #login button{width:100%;margin-top:18px;background:var(--green);color:#fff;border:0;border-radius:8px;padding:11px;font-size:14px;cursor:pointer}
+  #login button:disabled{opacity:.6;cursor:default}
+  #login .msg{margin-top:12px;font-size:12.5px;color:var(--urgent);min-height:16px}
+  .hide{display:none!important}
+  @media(max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}.ghead{grid-template-columns:20px 1fr 96px}.ghead .bar{display:none}}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="login">
+  <h1>EsgTrek — Painel</h1>
+  <p>Entre com seu e-mail e senha da equipe.</p>
+  <form id="loginForm">
+    <label>E-mail</label>
+    <input id="email" type="email" autocomplete="username" required>
+    <label>Senha</label>
+    <input id="password" type="password" autocomplete="current-password" required>
+    <button id="loginBtn" type="submit">Entrar</button>
+    <div class="msg" id="loginMsg"></div>
+  </form>
+</div>
+
+<!-- ===== APP ===== -->
+<div class="wrap hide" id="app">
+  <div class="topbar">
+    <div>
+      <h1 style="margin:0;font-size:22px;color:var(--green)">EsgTrek — Painel de Tarefas</h1>
+      <div class="sub">Compartilhado por licença · tempo real · marcações salvas no banco</div>
+    </div>
+    <span class="sp"></span>
+    <span class="who" id="who"></span>
+    <button class="btn" id="logoutBtn">Sair</button>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="controls">
+    <input class="search" id="search" placeholder="Buscar tarefa…">
+    <div class="seg" id="statusSeg">
+      <button data-v="abertas">Abertas</button>
+      <button data-v="concluidas">Concluídas</button>
+      <button data-v="todas" class="active">Todas</button>
+    </div>
+    <div class="seg" id="priSeg">
+      <button data-v="" class="active">Prioridade: todas</button>
+      <button data-v="P0">P0</button>
+      <button data-v="P1">P1</button>
+      <button data-v="P2">P2</button>
+    </div>
+    <div class="seg" id="viewSeg">
+      <button data-v="blocos" class="active">Blocos</button>
+      <button data-v="resp">Responsável</button>
+    </div>
+    <button class="btn" id="densityBtn">Compacto</button>
+    <button class="btn" id="expandAll">Expandir</button>
+    <button class="btn" id="collapseAll">Recolher</button>
+  </div>
+
+  <div id="board"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ===== config =====
+const SUPABASE_URL = "https://dwoafnflrvykkxcnkumk.supabase.co";
+const SUPABASE_KEY = "sb_publishable_nobkVQik7lkz_9h9R5m8xw_qsIQYkgx";
+const HOST_LICENCA = "1775138407935x658859306736418800"; // licença que hospeda o painel (Appana — Gestão e Relato)
+const PEOPLE = ["Sem responsável","Káritas","Karine","Raquel","João"];
+const SECTIONS = [
+  {id:"frentes", title:"🧩 Frentes / Projetos", note:"Planos e frentes desta fase. Clique no plano para ver e marcar as subtarefas."},
+  {id:"seg",     title:"🔐 Segurança", note:""},
+  {id:"tarefas", title:"🗂️ Central de Tarefas", note:""},
+];
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ===== UI prefs (localStorage só p/ preferências, nunca dados) =====
+const PREFS="esgtrek_painel_prefs_v1";
+let prefs = JSON.parse(localStorage.getItem(PREFS) || "{}");
+prefs.collapsed = prefs.collapsed || {};   // grupos recolhidos -> true
+prefs.status = prefs.status || "todas";
+prefs.pri = prefs.pri || "";
+prefs.view = prefs.view || "blocos";
+prefs.compact = !!prefs.compact;
+prefs.search = "";
+function savePrefs(){ const c={...prefs}; delete c.search; localStorage.setItem(PREFS, JSON.stringify(c)); }
+
+// ===== estado de dados =====
+let ROWS = [];        // linhas do banco
+let me = null;        // user
+
+// ===== helpers =====
+const $ = s => document.querySelector(s);
+function toast(msg, err){ const t=$("#toast"); t.textContent=msg; t.className="toast show"+(err?" err":""); setTimeout(()=>t.className="toast",1800); }
+function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
+function fmtBR(d){ if(!d) return ""; const x=new Date(d); return String(x.getUTCDate()).padStart(2,"0")+"/"+String(x.getUTCMonth()+1).padStart(2,"0"); }
+function daysBetween(a,b){ return Math.max(0, Math.round((b-a)/86400000)); }
+function ageBadge(r){
+  if(!r.created_date) return "";
+  const start=new Date(r.created_date);
+  if(r.done){
+    if(r.done_date){ const dd=daysBetween(start,new Date(r.done_date)); return `<span style="color:var(--done);font-weight:600">ficou ${dd}d aberta</span>`; }
+    return `<span style="color:var(--done);font-weight:600">concluída</span>`;
+  }
+  const dd=daysBetween(start,new Date());
+  const col = dd>=30?"var(--urgent)": dd>=14?"var(--doing)":"var(--idle)";
+  return `<span style="color:${col};font-weight:600">${dd}d em aberto</span>`;
+}
+function color(pct){ return pct===100?"var(--done)":pct>0?"var(--doing)":"var(--idle)"; }
+function matchesFilters(r){
+  if(prefs.status==="abertas" && r.done) return false;
+  if(prefs.status==="concluidas" && !r.done) return false;
+  if(prefs.pri && r.pri!==prefs.pri) return false;
+  if(prefs.search){
+    const q=prefs.search.toLowerCase();
+    if(!((r.label||"").toLowerCase().includes(q) || (r.grupo_titulo||"").toLowerCase().includes(q) || (r.obs||"").toLowerCase().includes(q))) return false;
+  }
+  return true;
+}
+
+// ===== render =====
+function renderKpis(){
+  const tot=ROWS.length, done=ROWS.filter(r=>r.done).length;
+  const grupos=new Set(ROWS.map(r=>r.grupo)).size;
+  const p0aberto=ROWS.filter(r=>r.pri==="P0" && !r.done).length;
+  const kpis=[
+    {n:grupos, l:"Planos / frentes"},
+    {n:(tot?Math.round(done/tot*100):0)+"%", l:"Conclusão geral"},
+    {n:(tot-done), l:"Subtarefas abertas"},
+    {n:p0aberto, l:"P0 em aberto", warn:p0aberto>0},
+    {n:"11/07", l:"Prazo reteste Allos"},
+  ];
+  $("#kpis").innerHTML = kpis.map(k=>`<div class="kpi"><div class="n${k.warn?' warn':''}">${k.n}</div><div class="l">${k.l}</div></div>`).join("");
+}
+function groupStats(rows){ const t=rows.length, d=rows.filter(r=>r.done).length; return {t,d,pct:t?Math.round(d/t*100):0}; }
+
+function taskHTML(r){
+  const note = r.obs ? "" : ""; // obs editável vai abaixo
+  const bits=[];
+  if(r.created_date) bits.push("incluída "+fmtBR(r.created_date));
+  const ab=ageBadge(r); if(ab) bits.push(ab);
+  const sub = bits.length? `<span class="tnote">${bits.join(" · ")}</span>`:"";
+  const priOpts=["","P0","P1","P2"].map(p=>`<option value="${p}" ${r.pri===p||(!r.pri&&p==="")?"selected":""}>${p||"—"}</option>`).join("");
+  const respVal = r.responsavel || "Sem responsável";
+  const unset = respVal==="Sem responsável"?"unset":"";
+  const respOpts=PEOPLE.map(p=>`<option ${respVal===p?"selected":""}>${p}</option>`).join("");
+  return `<div class="task ${r.done?'done':''}" data-id="${r.id}">
+    <input type="checkbox" data-act="done" ${r.done?'checked':''}>
+    <span class="tl">
+      <span class="lab">${r.flag?'<span class="star">⚡</span>':''}${esc(r.label)}${r.pri?`<span class="pri ${r.pri}">${r.pri}</span>`:''}</span>
+      ${sub}
+      <input class="obs ${r.obs?'':'empty'}" data-act="obs" value="${esc(r.obs||"")}" placeholder="observação…">
+    </span>
+    <select class="prisel" data-act="pri" title="Prioridade">${priOpts}</select>
+    <select class="resp ${unset}" data-act="resp" title="Responsável">${respOpts}</select>
+    <button class="del" data-act="del" title="Excluir">✕</button>
+  </div>`;
+}
+
+function groupBlockHTML(gid, gtitle, secao, rows){
+  const s=groupStats(rows);
+  const open = !prefs.collapsed[gid];
+  const visible = rows.filter(matchesFilters);
+  const body = visible.length
+    ? visible.map(taskHTML).join("")
+    : `<div class="empty">Nada para os filtros atuais.</div>`;
+  const add = secao ? `<div class="addrow">
+      <input data-add-grupo="${esc(gid)}" data-add-titulo="${esc(gtitle)}" data-add-secao="${esc(secao)}" placeholder="+ nova tarefa neste grupo…">
+    </div>` : "";
+  return `<div class="group ${open?'open':''}" data-g="${esc(gid)}">
+    <div class="ghead">
+      <span class="caret">▶</span>
+      <span class="gtitle">${esc(gtitle)}</span>
+      <span class="bar"><i style="width:${s.pct}%;background:${color(s.pct)}"></i></span>
+      <span class="gcount">${s.d}/${s.t} · ${s.pct}%</span>
+    </div>
+    <div class="gbody">${body}${add}</div>
+  </div>`;
+}
+
+function render(){
+  document.body.classList.toggle("compact", prefs.compact);
+  renderKpis();
+  const board=$("#board");
+
+  // grupo presente nos filtros? esconder grupos sem itens visíveis (exceto p/ permitir add) — mantemos grupo mas corpo mostra "nada"
+  if(prefs.view==="resp"){
+    const blocks = PEOPLE.map(p=>{
+      const rows = ROWS.filter(r=>(r.responsavel||"Sem responsável")===p);
+      if(!rows.length) return "";
+      // dentro de cada pessoa, só mostra se algum item passa nos filtros
+      if(!rows.some(matchesFilters)) return "";
+      return groupBlockHTML("resp-"+p, "👤 "+p, "", rows.sort((a,b)=>a.ordem-b.ordem));
+    }).join("");
+    board.innerHTML = `<div class="secnote">Agrupado por responsável. Reatribua no seletor de cada tarefa.</div>` + (blocks || `<div class="empty">Nada a mostrar.</div>`);
+  } else {
+    board.innerHTML = SECTIONS.map(sec=>{
+      // grupos da seção, na ordem do menor 'ordem'
+      const secRows = ROWS.filter(r=>r.secao===sec.id);
+      if(!secRows.length) return "";
+      const groupsMap = new Map();
+      secRows.sort((a,b)=>a.ordem-b.ordem).forEach(r=>{
+        if(!groupsMap.has(r.grupo)) groupsMap.set(r.grupo, {titulo:r.grupo_titulo||r.grupo, rows:[]});
+        groupsMap.get(r.grupo).rows.push(r);
+      });
+      let inner="";
+      for(const [gid,g] of groupsMap){
+        // mostra o grupo se tiver itens visíveis OU se não houver filtro de busca/status ativo (p/ permitir add)
+        const hasVisible = g.rows.some(matchesFilters);
+        const filtering = prefs.search || prefs.status!=="todas" || prefs.pri;
+        if(filtering && !hasVisible) continue;
+        inner += groupBlockHTML(gid, g.titulo, sec.id, g.rows);
+      }
+      return inner ? `<h2 class="sec">${sec.title}</h2>${sec.note?`<div class="secnote">${sec.note}</div>`:""}${inner}` : "";
+    }).join("") || `<div class="empty">Sem tarefas nesta licença. Verifique se seu usuário pertence à licença do painel.</div>`;
+  }
+  bind();
+}
+
+// ===== writes =====
+async function patch(id, fields){
+  const { error } = await sb.from("painel_tarefa").update(fields).eq("id", id);
+  if(error){ toast("Erro ao salvar: "+error.message, true); return false; }
+  return true;
+}
+async function addTask(grupo, grupo_titulo, secao, label){
+  // ordem = maior do grupo + 10
+  const maxOrdem = Math.max(0, ...ROWS.filter(r=>r.grupo===grupo).map(r=>r.ordem||0));
+  const row = { sys_licenca:HOST_LICENCA, secao, grupo, grupo_titulo, label, ordem:maxOrdem+10, done:false };
+  const { error } = await sb.from("painel_tarefa").insert(row);
+  if(error){ toast("Erro ao adicionar: "+error.message, true); return; }
+  toast("Tarefa adicionada");
+}
+async function removeTask(id){
+  const { error } = await sb.from("painel_tarefa").delete().eq("id", id);
+  if(error){ toast("Erro ao excluir: "+error.message, true); return; }
+  toast("Tarefa excluída");
+}
+
+// ===== bind =====
+function bind(){
+  document.querySelectorAll(".ghead").forEach(h=>h.onclick=()=>{
+    const g=h.closest(".group").dataset.g;
+    prefs.collapsed[g] = !prefs.collapsed[g] ? true : false;
+    if(prefs.collapsed[g]===false) delete prefs.collapsed[g];
+    savePrefs(); render();
+  });
+  document.querySelectorAll('.task').forEach(t=>{
+    const id=t.dataset.id;
+    const cb=t.querySelector('[data-act="done"]');
+    cb.onchange=async()=>{ const ok=await patch(id,{done:cb.checked}); if(!ok) cb.checked=!cb.checked; };
+    t.querySelector('[data-act="pri"]').onchange=e=>{ e.stopPropagation(); patch(id,{pri:e.target.value||null}); };
+    t.querySelector('[data-act="resp"]').onchange=e=>{ e.stopPropagation(); const v=e.target.value; patch(id,{responsavel: v==="Sem responsável"?null:v}); };
+    const obs=t.querySelector('[data-act="obs"]');
+    obs.onclick=e=>e.stopPropagation();
+    obs.onchange=()=>patch(id,{obs: obs.value.trim()||null});
+    t.querySelector('[data-act="del"]').onclick=async e=>{ e.stopPropagation(); if(confirm("Excluir esta tarefa?")) await removeTask(id); };
+  });
+  document.querySelectorAll('[data-add-grupo]').forEach(inp=>{
+    inp.onclick=e=>e.stopPropagation();
+    inp.onkeydown=async e=>{
+      if(e.key==="Enter" && inp.value.trim()){
+        const v=inp.value.trim(); inp.value="";
+        await addTask(inp.dataset.addGrupo, inp.dataset.addTitulo, inp.dataset.addSecao, v);
+      }
+    };
+  });
+}
+
+// ===== controles =====
+function segSet(segId, prefKey, after){
+  document.querySelectorAll("#"+segId+" button").forEach(b=>{
+    b.onclick=()=>{
+      document.querySelectorAll("#"+segId+" button").forEach(x=>x.classList.remove("active"));
+      b.classList.add("active");
+      prefs[prefKey]=b.dataset.v; savePrefs(); (after||render)();
+    };
+  });
+}
+function initControls(){
+  // estados iniciais dos segs
+  const setActive=(segId,key)=>document.querySelectorAll("#"+segId+" button").forEach(b=>b.classList.toggle("active", b.dataset.v===prefs[key]));
+  setActive("statusSeg","status"); setActive("priSeg","pri"); setActive("viewSeg","view");
+  segSet("statusSeg","status"); segSet("priSeg","pri"); segSet("viewSeg","view");
+  $("#search").oninput=e=>{ prefs.search=e.target.value; render(); };
+  $("#densityBtn").onclick=()=>{ prefs.compact=!prefs.compact; $("#densityBtn").classList.toggle("active",prefs.compact); $("#densityBtn").textContent=prefs.compact?"Confortável":"Compacto"; savePrefs(); render(); };
+  $("#densityBtn").classList.toggle("active",prefs.compact);
+  $("#densityBtn").textContent=prefs.compact?"Confortável":"Compacto";
+  $("#expandAll").onclick=()=>{ prefs.collapsed={}; savePrefs(); render(); };
+  $("#collapseAll").onclick=()=>{ new Set(ROWS.map(r=>r.grupo)).forEach(g=>prefs.collapsed[g]=true); PEOPLE.forEach(p=>prefs.collapsed["resp-"+p]=true); savePrefs(); render(); };
+  $("#logoutBtn").onclick=async()=>{ await sb.auth.signOut(); location.reload(); };
+}
+
+// ===== dados + realtime =====
+async function loadRows(){
+  const { data, error } = await sb.from("painel_tarefa").select("*").order("ordem");
+  if(error){ toast("Erro ao carregar: "+error.message, true); return; }
+  ROWS = data || [];
+  render();
+}
+let channel=null;
+function subscribeRealtime(){
+  if(channel) return;
+  channel = sb.channel("painel_tarefa_rt")
+    .on("postgres_changes", {event:"*", schema:"public", table:"painel_tarefa"}, loadRows)
+    .subscribe();
+}
+
+// ===== auth flow =====
+async function showApp(session){
+  me=session.user;
+  $("#login").classList.add("hide");
+  $("#app").classList.remove("hide");
+  $("#who").textContent = me.email;
+  initControls();
+  await loadRows();
+  subscribeRealtime();
+}
+$("#loginForm").onsubmit=async e=>{
+  e.preventDefault();
+  const btn=$("#loginBtn"); btn.disabled=true; $("#loginMsg").textContent="";
+  const { data, error } = await sb.auth.signInWithPassword({ email:$("#email").value.trim(), password:$("#password").value });
+  btn.disabled=false;
+  if(error){ $("#loginMsg").textContent = "Falha no login: "+error.message; return; }
+  showApp(data.session);
+};
+(async function init(){
+  const { data } = await sb.auth.getSession();
+  if(data.session) showApp(data.session);
+})();
+</script>
+</body>
+</html>
