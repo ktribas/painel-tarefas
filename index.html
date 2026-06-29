@@ -55,6 +55,27 @@
   .task .tnote{display:block;font-size:11.5px;color:var(--muted);text-decoration:none;margin-top:1px}
   .task .obs{display:block;width:100%;margin-top:3px;border:1px solid var(--line);border-radius:6px;padding:3px 6px;font-size:11.5px;color:#444;background:#fff;resize:vertical;min-height:0;height:24px;font-family:inherit}
   .task .obs.empty{color:var(--muted)}
+  .detbtn{margin-top:3px;border:0;background:transparent;color:var(--muted);font-size:11.5px;cursor:pointer;padding:2px 0}
+  .detbtn:hover{color:var(--doing)}
+  .detbtn.has{color:var(--urgent);font-weight:700}
+  .det{display:block;width:100%;margin-top:6px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fbfcfb}
+  .det.hide{display:none}
+  .tl-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+  .tl-item{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.45}
+  .tl-item .meta{flex:0 0 auto;font-size:10.5px;color:var(--muted);white-space:nowrap;padding-top:2px}
+  .tl-tag{display:inline-block;font-size:9.5px;font-weight:700;border-radius:5px;padding:1px 5px;margin-right:5px;vertical-align:1px;text-transform:uppercase;letter-spacing:.02em}
+  .tl-tag.decisao{background:#f6e2cd;color:#6b3f10}
+  .tl-tag.fluxo{background:#dbe7dc;color:var(--green)}
+  .tl-tag.evento{background:#e7e9e7;color:#555}
+  .tl-tag.nota{background:#eef1ee;color:var(--muted)}
+  .tl-item .txt{flex:1;white-space:pre-wrap}
+  .tl-item .rm{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;padding:0 2px}
+  .tl-item .rm:hover{color:var(--urgent)}
+  .tl-empty{font-size:11.5px;color:var(--muted);margin-bottom:8px}
+  .tl-add{display:flex;gap:6px;align-items:flex-start}
+  .tl-add select{flex:0 0 auto;font-size:11.5px;border:1px solid var(--line);border-radius:6px;padding:5px}
+  .tl-add textarea{flex:1;border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;resize:vertical;min-height:34px}
+  .tl-add button{flex:0 0 auto;background:var(--green);color:#fff;border:0;border-radius:6px;padding:7px 12px;font-size:12px;cursor:pointer}
   .resp,.prisel{flex:0 0 auto;font-size:11.5px;border:1px solid var(--line);border-radius:6px;padding:3px 5px;background:#fff;color:#444;cursor:pointer}
   .resp{max-width:130px}
   .resp.unset{color:var(--muted)}
@@ -75,6 +96,18 @@
   .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--green);color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;box-shadow:var(--shadow);opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
   .toast.show{opacity:1}
   .toast.err{background:var(--urgent)}
+  .btn.primary{background:var(--green);color:#fff;border-color:var(--green)}
+  .modal{position:fixed;inset:0;background:rgba(20,30,22,.45);display:flex;align-items:flex-start;justify-content:center;padding-top:8vh;z-index:60}
+  .modal.hide{display:none}
+  .modal-card{background:var(--card);border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.22);padding:22px;width:min(460px,92vw);max-height:84vh;overflow:auto}
+  .modal-card h3{margin:0 0 6px;color:var(--green);font-size:18px}
+  .modal-card label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+  .modal-card .mf{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;background:#fff}
+  .m-row{display:flex;gap:12px}.m-row>div{flex:1}
+  .m-check{display:flex!important;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--ink)}
+  .m-check input{width:auto}
+  .m-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+  .m-msg{margin-top:8px;font-size:12.5px;color:var(--urgent);min-height:14px}
   /* login */
   #login{max-width:360px;margin:9vh auto 0;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:26px 24px}
   #login h1{margin:0 0 4px;font-size:20px;color:var(--green)}
@@ -119,6 +152,7 @@
   <div class="kpis" id="kpis"></div>
 
   <div class="controls">
+    <button class="btn primary" id="newTaskBtn">＋ Nova tarefa</button>
     <input class="search" id="search" placeholder="Buscar tarefa…">
     <div class="seg" id="statusSeg">
       <button data-v="abertas">Abertas</button>
@@ -141,6 +175,43 @@
   </div>
 
   <div id="board"></div>
+</div>
+
+<!-- ===== MODAL Nova tarefa ===== -->
+<div id="modal" class="modal hide">
+  <div class="modal-card">
+    <h3>Nova tarefa</h3>
+    <label>Grupo</label>
+    <select class="mf" id="m_grupo"></select>
+    <div id="m_novogrupo" class="hide">
+      <label>Nome do novo grupo</label>
+      <input class="mf" id="m_grupo_nome" type="text" placeholder="Ex.: 🔧 Integrações">
+      <label>Seção</label>
+      <select class="mf" id="m_secao">
+        <option value="frentes">🧩 Frentes / Projetos</option>
+        <option value="seg">🔐 Segurança</option>
+        <option value="tarefas">🗂️ Central de Tarefas</option>
+      </select>
+    </div>
+    <label>Título da tarefa</label>
+    <input class="mf" id="m_label" type="text" placeholder="O que precisa ser feito">
+    <div class="m-row">
+      <div>
+        <label>Prioridade</label>
+        <select class="mf" id="m_pri"><option value="">—</option><option>P0</option><option>P1</option><option>P2</option></select>
+      </div>
+      <div>
+        <label>Responsável</label>
+        <select class="mf" id="m_resp"></select>
+      </div>
+    </div>
+    <label class="m-check"><input type="checkbox" id="m_privada"> Privada (só você vê)</label>
+    <div class="m-actions">
+      <button class="btn" id="m_cancel">Cancelar</button>
+      <button class="btn primary" id="m_save">Salvar</button>
+    </div>
+    <div class="m-msg" id="m_msg"></div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -172,13 +243,38 @@ function savePrefs(){ const c={...prefs}; delete c.search; localStorage.setItem(
 
 // ===== estado de dados =====
 let ROWS = [];        // linhas do banco
+let LOGS = {};        // tarefa_id -> [entradas da linha do tempo] (ordem cronológica)
 let me = null;        // user
+let expandedDetail = {}; // id -> true quando o detalhe está aberto (estado de UI, efêmero)
 
 // ===== helpers =====
 const $ = s => document.querySelector(s);
 function toast(msg, err){ const t=$("#toast"); t.textContent=msg; t.className="toast show"+(err?" err":""); setTimeout(()=>t.className="toast",1800); }
 function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
 function fmtBR(d){ if(!d) return ""; const x=new Date(d); return String(x.getUTCDate()).padStart(2,"0")+"/"+String(x.getUTCMonth()+1).padStart(2,"0"); }
+function fmtDateTime(d){ if(!d) return ""; const x=new Date(d); const p=n=>String(n).padStart(2,"0"); return p(x.getDate())+"/"+p(x.getMonth()+1)+"/"+x.getFullYear()+" "+p(x.getHours())+":"+p(x.getMinutes()); }
+function timelineHTML(tid){
+  const logs = LOGS[tid] || [];
+  const list = logs.length
+    ? `<div class="tl-list">${logs.map(g=>`
+        <div class="tl-item" data-log="${g.id}">
+          <span class="meta">${fmtDateTime(g.created_date)}<br>${esc(g.autor||"")}</span>
+          <span class="txt"><span class="tl-tag ${esc(g.tipo||"nota")}">${esc(g.tipo||"nota")}</span>${esc(g.texto)}</span>
+          ${(me && g.creator_id===me.id) ? `<button class="rm" data-act="logdel" title="Remover">✕</button>` : ``}
+        </div>`).join("")}</div>`
+    : `<div class="tl-empty">Sem registros ainda. Anote decisões, fluxos e o que for acontecendo nesta tarefa.</div>`;
+  const add = `<div class="tl-add">
+      <select data-act="logtipo">
+        <option value="nota">Nota</option>
+        <option value="decisao">Decisão</option>
+        <option value="fluxo">Fluxo</option>
+        <option value="evento">Evento</option>
+      </select>
+      <textarea data-act="logtxt" placeholder="registrar… (Ctrl+Enter envia)"></textarea>
+      <button data-act="logadd" data-tid="${tid}">Registrar</button>
+    </div>`;
+  return list + add;
+}
 function daysBetween(a,b){ return Math.max(0, Math.round((b-a)/86400000)); }
 function ageBadge(r){
   if(!r.created_date) return "";
@@ -220,7 +316,8 @@ function renderKpis(){
 function groupStats(rows){ const t=rows.length, d=rows.filter(r=>r.done).length; return {t,d,pct:t?Math.round(d/t*100):0}; }
 
 function taskHTML(r){
-  const note = r.obs ? "" : ""; // obs editável vai abaixo
+  const detOpen = !!expandedDetail[r.id];
+  const logCount = (LOGS[r.id]||[]).length;
   const bits=[];
   if(r.created_date) bits.push("incluída "+fmtBR(r.created_date));
   const ab=ageBadge(r); if(ab) bits.push(ab);
@@ -235,6 +332,8 @@ function taskHTML(r){
       <span class="lab">${r.flag?'<span class="star">⚡</span>':''}${esc(r.label)}${r.pri?`<span class="pri ${r.pri}">${r.pri}</span>`:''}</span>
       ${sub}
       <input class="obs ${r.obs?'':'empty'}" data-act="obs" value="${esc(r.obs||"")}" placeholder="observação…">
+      <button class="detbtn ${logCount?'has':''}" data-act="dettoggle">${detOpen?'▾ detalhe':(logCount?`▸ detalhe (${logCount})`:'＋ detalhe')}</button>
+      <div class="det ${detOpen?'':'hide'}" data-det="${r.id}">${detOpen?timelineHTML(r.id):''}</div>
     </span>
     <select class="prisel" data-act="pri" title="Prioridade">${priOpts}</select>
     <select class="resp ${unset}" data-act="resp" title="Responsável">${respOpts}</select>
@@ -316,11 +415,84 @@ async function addTask(grupo, grupo_titulo, secao, label){
   if(error){ toast("Erro ao adicionar: "+error.message, true); return; }
   toast("Tarefa adicionada");
 }
+function groupCatalog(){
+  const seen=new Map();
+  ROWS.slice().sort((a,b)=>a.ordem-b.ordem).forEach(r=>{
+    if(!seen.has(r.grupo)) seen.set(r.grupo, {grupo:r.grupo, titulo:r.grupo_titulo||r.grupo, secao:r.secao});
+  });
+  return [...seen.values()];
+}
+function openNewTask(){
+  const secLabel={frentes:"Frentes",seg:"Segurança",tarefas:"Central"};
+  $("#m_grupo").innerHTML = groupCatalog().map(g=>
+    `<option value="${esc(g.grupo)}" data-secao="${esc(g.secao)}">${secLabel[g.secao]||g.secao} · ${esc(g.titulo)}</option>`).join("")
+    + `<option value="__new__">➕ novo grupo…</option>`;
+  $("#m_resp").innerHTML = PEOPLE.map(p=>`<option ${p==="Káritas"?"selected":""}>${p}</option>`).join("");
+  $("#m_label").value=""; $("#m_pri").value=""; $("#m_privada").checked=false;
+  $("#m_grupo_nome").value=""; $("#m_msg").textContent="";
+  $("#m_novogrupo").classList.add("hide");
+  $("#modal").classList.remove("hide");
+  setTimeout(()=>$("#m_label").focus(),50);
+}
+function closeModal(){ $("#modal").classList.add("hide"); }
+async function saveNewTask(){
+  const label=$("#m_label").value.trim();
+  if(!label){ $("#m_msg").textContent="Informe o título da tarefa."; return; }
+  let secao, grupo, grupo_titulo;
+  if($("#m_grupo").value==="__new__"){
+    grupo_titulo=$("#m_grupo_nome").value.trim();
+    if(!grupo_titulo){ $("#m_msg").textContent="Informe o nome do novo grupo."; return; }
+    secao=$("#m_secao").value;
+    grupo="g-"+Date.now().toString(36);
+  } else {
+    grupo=$("#m_grupo").value;
+    secao=$("#m_grupo").selectedOptions[0].dataset.secao;
+    grupo_titulo=(ROWS.find(r=>r.grupo===grupo)||{}).grupo_titulo || grupo;
+  }
+  const sameGroup=ROWS.filter(r=>r.grupo===grupo).map(r=>r.ordem||0);
+  const ordem = (sameGroup.length ? Math.max(...sameGroup) : Math.max(0,...ROWS.map(r=>r.ordem||0))) + 10;
+  const resp=$("#m_resp").value;
+  const row={ sys_licenca:HOST_LICENCA, secao, grupo, grupo_titulo, label,
+    pri:$("#m_pri").value||null, responsavel: resp==="Sem responsável"?null:resp,
+    privada:$("#m_privada").checked, done:false, ordem };
+  const { error } = await sb.from("painel_tarefa").insert(row);
+  if(error){ $("#m_msg").textContent="Erro: "+error.message; return; }
+  closeModal(); toast("Tarefa criada");
+}
 async function removeTask(id){
   // soft delete: marca sys_deletado=true (não apaga fisicamente)
   const { error } = await sb.from("painel_tarefa").update({ sys_deletado:true }).eq("id", id);
   if(error){ toast("Erro ao excluir: "+error.message, true); return; }
   toast("Tarefa excluída");
+}
+async function addLog(tid, sys_licenca, tipo, texto){
+  const { error } = await sb.from("painel_tarefa_log").insert({ tarefa_id:tid, sys_licenca, tipo, texto, autor: me?me.email:null });
+  if(error){ toast("Erro ao registrar: "+error.message, true); return; }
+  toast("Registro adicionado");
+}
+async function delLog(logId){
+  const { error } = await sb.from("painel_tarefa_log").delete().eq("id", logId);
+  if(error){ toast("Erro ao remover: "+error.message, true); return; }
+  toast("Registro removido");
+}
+function bindTimeline(box, tid){
+  box.onclick=e=>e.stopPropagation();
+  const txt=box.querySelector('[data-act="logtxt"]');
+  const tipo=box.querySelector('[data-act="logtipo"]');
+  const addBtn=box.querySelector('[data-act="logadd"]');
+  if(addBtn){
+    const doAdd=async()=>{
+      const v=(txt.value||"").trim(); if(!v) return;
+      txt.value="";
+      const row=ROWS.find(r=>r.id===tid);
+      await addLog(tid, row?row.sys_licenca:HOST_LICENCA, tipo.value, v);
+    };
+    addBtn.onclick=e=>{ e.stopPropagation(); doAdd(); };
+    txt.onkeydown=e=>{ if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){ e.preventDefault(); doAdd(); } };
+  }
+  box.querySelectorAll('[data-act="logdel"]').forEach(b=>{
+    b.onclick=async e=>{ e.stopPropagation(); const lid=b.closest('[data-log]').dataset.log; if(confirm("Remover este registro?")) await delLog(lid); };
+  });
 }
 
 // ===== bind =====
@@ -340,6 +512,18 @@ function bind(){
     const obs=t.querySelector('[data-act="obs"]');
     obs.onclick=e=>e.stopPropagation();
     obs.onchange=()=>patch(id,{obs: obs.value.trim()||null});
+    const detBtn=t.querySelector('[data-act="dettoggle"]');
+    const det=t.querySelector('[data-det]');
+    detBtn.onclick=e=>{
+      e.stopPropagation();
+      const open = !expandedDetail[id];
+      const n=(LOGS[id]||[]).length;
+      if(open){ expandedDetail[id]=true; det.innerHTML=timelineHTML(id); bindTimeline(det, id); }
+      else { delete expandedDetail[id]; det.innerHTML=""; }
+      det.classList.toggle("hide", !open);
+      detBtn.textContent = open ? "▾ detalhe" : (n?`▸ detalhe (${n})`:"＋ detalhe");
+    };
+    if(expandedDetail[id]) bindTimeline(det, id);
     t.querySelector('[data-act="del"]').onclick=async e=>{ e.stopPropagation(); if(confirm("Excluir esta tarefa?")) await removeTask(id); };
   });
   document.querySelectorAll('[data-add-grupo]').forEach(inp=>{
@@ -375,13 +559,25 @@ function initControls(){
   $("#expandAll").onclick=()=>{ prefs.collapsed={}; savePrefs(); render(); };
   $("#collapseAll").onclick=()=>{ new Set(ROWS.map(r=>r.grupo)).forEach(g=>prefs.collapsed[g]=true); PEOPLE.forEach(p=>prefs.collapsed["resp-"+p]=true); savePrefs(); render(); };
   $("#logoutBtn").onclick=async()=>{ await sb.auth.signOut(); location.reload(); };
+  // modal nova tarefa
+  $("#newTaskBtn").onclick=openNewTask;
+  $("#m_cancel").onclick=closeModal;
+  $("#m_save").onclick=saveNewTask;
+  $("#m_grupo").onchange=()=>$("#m_novogrupo").classList.toggle("hide", $("#m_grupo").value!=="__new__");
+  $("#modal").onclick=e=>{ if(e.target.id==="modal") closeModal(); };
+  $("#m_label").onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); saveNewTask(); } };
 }
 
 // ===== dados + realtime =====
 async function loadRows(){
-  const { data, error } = await sb.from("painel_tarefa").select("*").eq("sys_deletado", false).order("ordem");
-  if(error){ toast("Erro ao carregar: "+error.message, true); return; }
-  ROWS = data || [];
+  const [tasksRes, logsRes] = await Promise.all([
+    sb.from("painel_tarefa").select("*").eq("sys_deletado", false).order("ordem"),
+    sb.from("painel_tarefa_log").select("*").order("created_date", { ascending:true })
+  ]);
+  if(tasksRes.error){ toast("Erro ao carregar: "+tasksRes.error.message, true); return; }
+  ROWS = tasksRes.data || [];
+  LOGS = {};
+  (logsRes.data || []).forEach(g=>{ (LOGS[g.tarefa_id] = LOGS[g.tarefa_id] || []).push(g); });
   render();
 }
 let channel=null;
@@ -389,6 +585,7 @@ function subscribeRealtime(){
   if(channel) return;
   channel = sb.channel("painel_tarefa_rt")
     .on("postgres_changes", {event:"*", schema:"public", table:"painel_tarefa"}, loadRows)
+    .on("postgres_changes", {event:"*", schema:"public", table:"painel_tarefa_log"}, loadRows)
     .subscribe();
 }
 
